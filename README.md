@@ -76,7 +76,8 @@ file(GLOB/GLOB_RECURSE 变量名 要搜索的文件路径和文件类型)
 file(GLOB MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB MAIN_HEAD ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 
-# CMAKE_CURRENT_SOURCE_DIR 宏表示当前访问的 CMakeLists.txt 文件所在的路径。
+# CMAKE_CURRENT_SOURCE_DIR 宏 指向当前访问的 CMakeLists.txt 文件所在的路径。
+# PEOJECT_SOURCE_DIR 宏 指向包含顶层 CMakeLists.txt 文件的目录
 ```
 
 ###### C++的静态库、动态库与头文件的关系
@@ -110,6 +111,9 @@ include_directories：它的参数直接是目录路径，没有区分 PRIVATE�
 target_include_directories：它需要指定目标名称，并且可以指定路径是 PRIVATE、PUBLIC 还是 INTERFACE，这决定了头文件路径是如何传递给依赖该目标的其他目标的
 3. 现代CMake推荐使用 target_include_directories
 
+同理， link_directories 与 target_link_libraries 也是同样的区别
+注意： 没有 link_libraries 也没有 target_link_directories
+
 ##### CMake生成可执行文件、静态库、动态库
 ```cmake
 cmake_minimum_required(VERSION 3.10)
@@ -136,11 +140,57 @@ target_include_directories(shared_app PUBLIC ${headpath})
 # 生成可执行文件
 # include_directories(${headpath}) # 被抛弃
 add_executable(app main.cpp ${SRC_LIST})
+# 包含头文件
 target_include_directories(app PUBLIC ${headpath})
+# 使用静态库
+target_link_libraries(my_app PRIVATE static_app)
+# 使用动态库
+target_link_libraries(my_app PRIVATE shared_app)
 ```
 
-##### CMake导入第三方库文件
+静态库的命令：
+lib<静态库名称>.a/lib
+动态库的命令：
+lib<动态库名称>.so/dll
 
+##### CMake导入第三方库文件
+```cmake
+# 查找 OpenCV 包
+find_package(OpenCV REQUIRED)
+
+# 为目标添加头文件搜索路径
+target_include_directories(VideoToImages PRIVATE ${OpenCV_INCLUDE_DIRS})
+
+# 链接 OpenCV 库
+target_link_libraries(VideoToImages PRIVATE ${OpenCV_LIBS})
+```
+
+##### CMakeLists.txt 嵌套
+顶层CMakeLists.txt
+```cmake
+cmake_minimum_required(VERSION 3.10)
+project(MyProject)
+
+# 添加子目录
+add_subdirectory(lib)
+add_subdirectory(app)
+```
+被调用的lib的CMakeLists.txt
+```cmake
+# 定义一个库
+add_library(mylib STATIC src/lib.cpp)
+# 设置库的头文件
+target_include_directories(mylib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+```
+调用别的库的app的CMakeLists.txt
+```cmake
+# 定义一个可执行文件
+add_executable(myapp src/main.cpp)
+# 链接库到可执行文件
+target_link_libraries(myapp PRIVATE mylib)
+# 添加 include 目录
+target_include_directories(myapp PRIVATE ${PROJECT_SOURCE_DIR}/lib/include)
+```
 
 #### CMake语言的其他语法
 
