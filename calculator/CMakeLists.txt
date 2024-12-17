@@ -1,9 +1,25 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 project(CALC) # project 工程名
+set(CMAKE_CXX_STANDARD 11) # 设置c++标准
 
-# add_executable(app main.cpp add.cpp div.cpp multi.cpp sub.cpp) # 可执行程序名 源文件名称
+set(headpath ${CMAKE_CURRENT_SOURCE_DIR}/include)
+file(GLOB SRC_LIST ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 
-set(SRC_LIST main.cpp;add.cpp;div.cpp;multi.cpp;sub.cpp)
-# set(SRC_LIST main.cpp add.cpp div.cpp multi.cpp sub.cpp) # 代码里使用 空格 进行分隔也完全可以
-message(${SRC_LIST}) # 变量内部存储使用 ; 进行分隔  但显示时只进行简单的连接  实际上应该理解为 list（一个内部使用 ; 来分隔的list）
-add_executable(app  ${SRC_LIST})
+# 生成静态库
+add_library(
+    static_app STATIC 
+    ${SRC_LIST}
+)
+target_include_directories(static_app PUBLIC ${headpath})
+
+# 生成动态库
+add_library(
+    shared_app SHARED
+    ${SRC_LIST}
+)
+target_include_directories(shared_app PUBLIC ${headpath})
+
+# 生成可执行文件
+# include_directories(${headpath}) # 被抛弃
+add_executable(app main.cpp ${SRC_LIST})
+target_include_directories(app PUBLIC ${headpath})
